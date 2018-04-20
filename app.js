@@ -8,14 +8,16 @@ process.on('unhandledRejection', (reason) => {
   process.exit(0)
 })
 
-let mongoose = require('mongoose')
+const mongoose = require('mongoose')
 mongoose.Promise = Promise
 mongoose.connect('mongodb://localhost/soundman', { useMongoClient: true })
-let path = require('path')
-let express = require('express')
-let app = express()
-let bodyParser = require('body-parser')
-let routes = require('./api/routes.js')
+const path = require('path')
+const express = require('express')
+const app = express()
+const bodyParser = require('body-parser')
+const routes = require('./api/routes.js')
+const auth = require('./routes/auth');
+require('api/helpers/passport')
 
 app.set('views', path.join(__dirname, '/public'))
 app.engine('html', require('ejs').renderFile)
@@ -29,8 +31,9 @@ app.use(express.static('public'))
 // parse application/json
 app.use(bodyParser.json())
 
+app.use('/auth', auth);
 Object.keys(routes).forEach(key => {
-  app.use(key, routes[key])
+  app.use(key, passport.authenticate('jwt', {session: false}), routes[key])
 })
 
 app.listen(3000, () => {
